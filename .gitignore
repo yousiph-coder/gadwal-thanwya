@@ -1,0 +1,29 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Python
+venv/
+__pycache__/
+*.py[cod]
+
+# Android build outputs (keep source, ignore builds)
+android/app/build/
+android/.gradle/
+android/build/
+android/local.properties
+
+# Capacitor
+.capacitor/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln

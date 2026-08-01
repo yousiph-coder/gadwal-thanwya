@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مراجعة الدروس — منشئ الجدول الدراسي</title>
+<meta name="description" content="مراجعة الدروس المكتملة وتأكيد تثبيت المعلومات لطلاب الثانوية العامة">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=4.3">
+<style>
+/* ── Review Page Specific ── */
+.review-page { gap: 0; max-width: 960px; margin: 0 auto; width: 100%; padding-top: 30px; flex-direction: column; }
+.rev-header-bar {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding-bottom: 14px; border-bottom: 1px solid var(--glass-border);
+  margin-bottom: 24px; flex-wrap: wrap;
+}
+.rev-title { font-size: 1.4rem; font-weight: 800; flex: 1; }
+.rev-breadcrumb {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: .82rem; color: var(--text-dim); padding: 10px 16px;
+  border-radius: 12px; background: rgba(255,255,255,.04);
+  border: 1px solid var(--glass-border); width: 100%;
+  margin-bottom: 16px; min-height: 40px;
+}
+.rev-crumb { cursor: pointer; transition: color .2s; padding: 2px 4px; border-radius: 6px; }
+.rev-crumb:hover { color: var(--text); background: rgba(255,255,255,.08); }
+.rev-crumb.active { color: var(--text); font-weight: 700; cursor: default; }
+.rev-crumb.active:hover { background: transparent; }
+.rev-crumb-sep { opacity: .4; }
+
+/* Stats bar */
+.rev-stats-bar {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px; width: 100%; margin-bottom: 24px;
+}
+.rev-stat-card {
+  padding: 16px; text-align: center; border-radius: 16px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+}
+.rev-stat-num { font-size: 1.8rem; font-weight: 900; margin-bottom: 4px; }
+.rev-stat-lbl { font-size: .75rem; color: var(--text-dim); }
+
+/* Progress bar container */
+.rev-progress-wrap {
+  width: 100%;
+  margin-bottom: 24px;
+}
+.rev-progress-label {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.rev-progress-bar {
+  height: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.rev-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #67e8f9);
+  width: 0%;
+  transition: width 0.4s ease;
+}
+
+/* Level views */
+.rev-view { display: none; flex-direction: column; gap: 14px; width: 100%; animation: fadeInUp .35s ease forwards; }
+.rev-view.active { display: flex; }
+
+/* Subject cards grid */
+.rev-subjects-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px; width: 100%;
+}
+.rev-subject-card {
+  padding: 24px 18px; border-radius: 18px;
+  border: 1px solid var(--glass-border); border-right: 4px solid transparent;
+  background: var(--glass-bg); backdrop-filter: blur(12px);
+  cursor: pointer; transition: all .3s;
+  text-align: center; position: relative; overflow: hidden;
+  animation: fadeInUp .5s ease forwards; opacity: 0;
+}
+.rev-subject-card:hover { transform: translateY(-5px); box-shadow: 0 14px 36px rgba(0,0,0,.35); }
+.rev-subject-card .cs-icon { font-size: 2.4rem; margin-bottom: 10px; display: block; filter: drop-shadow(0 0 8px currentColor); }
+.rev-subject-card .cs-name { font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; }
+.rev-subject-card .cs-prog-text { font-size: .72rem; color: var(--text-dim); margin-bottom: 8px; }
+.rev-subject-card .cs-prog-bar { width: 100%; height: 6px; background: rgba(255,255,255,.1); border-radius: 3px; overflow: hidden; }
+body.day-mode .rev-subject-card .cs-prog-bar { background: rgba(0,0,0,.1); }
+.rev-subject-card .cs-prog-fill { height: 100%; border-radius: 3px; transition: width .3s ease; }
+.cs-done-badge { position: absolute; top: 10px; left: 10px; font-size: 1.1rem; }
+
+/* Units list */
+.rev-units-list { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.rev-unit-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px; border-radius: 14px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px); cursor: pointer;
+  transition: all .25s; position: relative; overflow: hidden;
+  animation: fadeInUp .4s ease forwards; opacity: 0;
+}
+.rev-unit-card:hover { transform: translateX(-5px); background: rgba(255,255,255,0.1); }
+body.day-mode .rev-unit-card:hover { background: rgba(0,0,0,0.05); }
+.rev-unit-card .cu-num {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .85rem; font-weight: 800; flex-shrink: 0;
+  background: rgba(255,255,255,.08); border: 1px solid var(--glass-border);
+}
+.rev-unit-card .cu-info { flex: 1; text-align: right; }
+.rev-unit-card .cu-name { font-size: .95rem; font-weight: 700; margin-bottom: 4px; }
+.rev-unit-card .cu-meta { font-size: .72rem; color: var(--text-dim); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rev-unit-card .cu-prog-bar { width: 100%; height: 4px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+body.day-mode .rev-unit-card .cu-prog-bar { background: rgba(0,0,0,.08); }
+.rev-unit-card .cu-prog-fill { height: 100%; border-radius: 2px; transition: width .3s; }
+.rev-unit-card .cu-arrow { color: var(--text-dim); font-size: 1.1rem; transition: transform .2s; flex-shrink: 0; }
+.rev-unit-card:hover .cu-arrow { transform: translateX(-4px); }
+
+/* Lessons list */
+.rev-lessons-list { display: flex; flex-direction: column; gap: 9px; width: 100%; }
+.rev-lesson-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 16px; border-radius: 13px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  transition: all .2s; animation: fadeInUp .3s ease forwards; opacity: 0;
+}
+body.day-mode .rev-lesson-item { background: rgba(0,0,0,.02); border-color: rgba(0,0,0,.08); }
+.rev-lesson-item:hover { background: rgba(255,255,255,.08); }
+body.day-mode .rev-lesson-item:hover { background: rgba(0,0,0,.05); }
+.rev-lesson-item.reviewed { opacity: .65; }
+.rev-lesson-item.reviewed .cl-text { text-decoration: line-through; color: var(--text-dim); }
+
+.cl-check {
+  width: 22px; height: 22px; border: 2px solid rgba(255,255,255,.3);
+  border-radius: 5px; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; transition: all .2s;
+  font-size: .8rem;
+}
+.cl-check:hover { border-color: #3b82f6; }
+.cl-check.done { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+body.day-mode .cl-check { border-color: rgba(0,0,0,.25); }
+.cl-text { flex: 1; font-size: .92rem; line-height: 1.5; }
+.cl-num { font-size: .7rem; color: var(--text-dim); background: rgba(255,255,255,.07); padding: 2px 8px; border-radius: 8px; flex-shrink: 0; }
+
+/* Back button */
+.rev-back-btn {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.07); border: 1px solid var(--glass-border);
+  color: var(--text-dim); border-radius: 12px; padding: 8px 16px;
+  font-size: .85rem; font-family: 'Cairo', sans-serif;
+  cursor: pointer; transition: all .2s; flex-shrink: 0;
+}
+.rev-back-btn:hover { background: rgba(255,255,255,.14); color: var(--text); }
+
+/* Empty state */
+.rev-empty {
+  text-align: center; padding: 60px 20px; color: var(--text-dim);
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: 20px; backdrop-filter: blur(12px); width: 100%;
+}
+.rev-empty-icon { font-size: 3.5rem; display: block; margin-bottom: 16px; }
+.rev-empty-text { font-size: 1rem; line-height: 1.6; }
+
+@media(max-width:600px) {
+  .rev-subjects-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="screen active fade-in review-page" id="screenReview" style="display: flex;">
+  <div class="rev-header-bar">
+    <button class="rev-back-btn" id="revBackBtn" onclick="goBackLevel()" style="display: none;">→ عودة</button>
+    <span class="rev-title" id="revTitle">🔍 مراجعة الدروس</span>
+  </div>
+  
+  <!-- Breadcrumb -->
+  <div class="rev-breadcrumb" id="revBreadcrumb" style="display: none;">
+    <span class="rev-crumb" onclick="goToLevel('subjects')">المواد</span>
+    <span class="rev-crumb-sep">‹</span>
+    <span class="rev-crumb" id="crumbSubject" onclick="goToLevel('units', currSubjectIdx)">المادة</span>
+    <span id="crumbUnitSep" class="rev-crumb-sep" style="display: none;">‹</span>
+    <span class="rev-crumb" id="crumbUnit" style="display: none;">الوحدة</span>
+  </div>
+  
+  <!-- Progress & Stats -->
+  <div class="rev-progress-wrap" id="revProgressContainer">
+    <div class="rev-progress-label">
+      <span>نسبة مراجعة المنهج المكتمل</span>
+      <span id="revProgressPct">0%</span>
+    </div>
+    <div class="rev-progress-bar">
+      <div class="rev-progress-fill" id="revProgressFill"></div>
+    </div>
+  </div>
+  
+  <div class="rev-stats-bar" id="revStatsBar">
+    <div class="rev-stat-card">
+      <div class="rev-stat-num" id="statCompleted" style="color:var(--c3)">0</div>
+      <div class="rev-stat-lbl">درس مكتمل</div>
+    </div>
+    <div class="rev-stat-card">
+      <div class="rev-stat-num" id="statReviewed" style="color:var(--c2)">0</div>
+      <div class="rev-stat-lbl">درس تمت مراجعته</div>
+    </div>
+    <div class="rev-stat-card">
+      <div class="rev-stat-num" id="statRemaining" style="color:var(--c1)">0</div>
+      <div class="rev-stat-lbl">متبقي للمراجعة</div>
+    </div>
+  </div>
+  
+  <!-- LEVEL 1: Subjects Grid -->
+  <div id="viewSubjects" class="rev-view active">
+    <div class="rev-subjects-grid" id="subjectsGrid"></div>
+  </div>
+  
+  <!-- LEVEL 2: Units List -->
+  <div id="viewUnits" class="rev-view">
+    <div class="rev-units-list" id="unitsList"></div>
+  </div>
+  
+  <!-- LEVEL 3: Lessons List -->
+  <div id="viewLessons" class="rev-view">
+    <div class="rev-lessons-list" id="lessonsList"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/particles.js"></script>
+<script src="js/db.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/common.js?v=4.3"></script>
+<script>
+let currLevel = 'subjects'; // 'subjects' | 'units' | 'lessons'
+let currSubjectIdx = null;
+let currUnitIdx = null;
+
+function initReviewPage() {
+  if (!state.branch) {
+    showEmptyState("لم تختر شعبة بعد. اذهب إلى الجدول الدراسي أولاً واختر شعبتك لتفعيل المنهج.");
+    return;
+  }
+  
+  // Make sure curriculumState.subjects matches the selected branch
+  const br = CURRICULUM_BRANCHES[state.branch];
+  if (!curriculumState.subjects || !curriculumState.subjects.length) {
+    // Initialize if empty
+    curriculumState.subjects = br.subjects.map((name, i) => ({
+      id: i,
+      name,
+      color: COLORS[i % COLORS.length],
+      units: []
+    }));
+    saveCurrentData();
+  }
+  
+  renderStatsBar();
+  goToLevel('subjects');
+}
+
+function showEmptyState(msg) {
+  const container = document.getElementById('screenReview');
+  container.innerHTML = `
+    <div class="rev-header-bar">
+      <span class="rev-title">🔍 مراجعة الدروس</span>
+    </div>
+    <div class="rev-empty">
+      <span class="rev-empty-icon">🔍</span>
+      <div class="rev-empty-text">${msg}</div>
+    </div>
+  `;
+}
+
+function renderStatsBar() {
+  let totalCompleted = 0;
+  let totalReviewed = 0;
+  
+  curriculumState.subjects.forEach(subj => {
+    subj.units.forEach(u => {
+      u.lessons.forEach(l => {
+        if (l.completed) {
+          totalCompleted++;
+          if (l.reviewed) {
+            totalReviewed++;
+          }
+        }
+      });
+    });
+  });
+  
+  const remaining = totalCompleted - totalReviewed;
+  const pct = totalCompleted ? Math.round((totalReviewed / totalCompleted) * 100) : 0;
+  
+  const compEl = document.getElementById('statCompleted');
+  const revEl = document.getElementById('statReviewed');
+  const remEl = document.getElementById('statRemaining');
+  const pctEl = document.getElementById('revProgressPct');
+  const fillEl = document.getElementById('revProgressFill');
+  
+  if (compEl) compEl.textContent = totalCompleted;
+  if (revEl) revEl.textContent = totalReviewed;
+  if (remEl) remEl.textContent = remaining;
+  if (pctEl) pctEl.textContent = pct + '%';
+  if (fillEl) fillEl.style.width = pct + '%';
+}
+
+function goToLevel(level, si = null, ui = null) {
+  currLevel = level;
+  
+  // Update views active states
+  document.getElementById('viewSubjects').classList.remove('active');
+  document.getElementById('viewUnits').classList.remove('active');
+  document.getElementById('viewLessons').classList.remove('active');
+  
+  const backBtn = document.getElementById('revBackBtn');
+  const breadcrumb = document.getElementById('revBreadcrumb');
+  
+  if (level === 'subjects') {
+    currSubjectIdx = null;
+    currUnitIdx = null;
+    backBtn.style.display = 'none';
+    breadcrumb.style.display = 'none';
+    document.getElementById('revTitle').textContent = '🔍 مراجعة الدروس';
+    document.getElementById('viewSubjects').classList.add('active');
+    renderSubjectsGrid();
+  } else if (level === 'units') {
+    currSubjectIdx = si;
+    currUnitIdx = null;
+    backBtn.style.display = 'flex';
+    breadcrumb.style.display = 'flex';
+    document.getElementById('crumbSubject').textContent = curriculumState.subjects[si].name;
+    document.getElementById('crumbSubject').className = 'rev-crumb active';
+    document.getElementById('crumbUnitSep').style.display = 'none';
+    document.getElementById('crumbUnit').style.display = 'none';
+    document.getElementById('revTitle').textContent = `الوحدات — ${curriculumState.subjects[si].name}`;
+    document.getElementById('viewUnits').classList.add('active');
+    renderUnitsList(si);
+  } else if (level === 'lessons') {
+    currSubjectIdx = si;
+    currUnitIdx = ui;
+    backBtn.style.display = 'flex';
+    breadcrumb.style.display = 'flex';
+    document.getElementById('crumbSubject').className = 'rev-crumb';
+    document.getElementById('crumbUnitSep').style.display = 'inline';
+    document.getElementById('crumbUnit').style.display = 'inline';
+    document.getElementById('crumbUnit').textContent = curriculumState.subjects[si].units[ui].name;
+    document.getElementById('crumbUnit').className = 'rev-crumb active';
+    document.getElementById('revTitle').textContent = `الدروس — ${curriculumState.subjects[si].units[ui].name}`;
+    document.getElementById('viewLessons').classList.add('active');
+    renderLessonsList(si, ui);
+  }
+}
+
+function goBackLevel() {
+  if (currLevel === 'lessons') {
+    goToLevel('units', currSubjectIdx);
+  } else if (currLevel === 'units') {
+    goToLevel('subjects');
+  }
+}
+
+// LEVEL 1: Render subjects that have completed lessons
+function renderSubjectsGrid() {
+  const grid = document.getElementById('subjectsGrid');
+  grid.innerHTML = '';
+  
+  const subjectsWithCompleted = curriculumState.subjects.map((subj, si) => {
+    let completedCount = 0;
+    let reviewedCount = 0;
+    
+    subj.units.forEach(u => {
+      u.lessons.forEach(l => {
+        if (l.completed) {
+          completedCount++;
+          if (l.reviewed) reviewedCount++;
+        }
+      });
+    });
+    
+    return { subj, si, completedCount, reviewedCount };
+  }).filter(item => item.completedCount > 0);
+  
+  if (!subjectsWithCompleted.length) {
+    grid.innerHTML = `<div class="rev-empty" style="width:100%">
+      <span class="rev-empty-icon">📝</span>
+      <div class="rev-empty-text">لا توجد أي دروس مكتملة بعد لمراجعتها.<br><small>قم بالذهاب لصفحة المنهج 📚 وعلم على الدروس المكتملة أولاً.</small></div>
+    </div>`;
+    return;
+  }
+  
+  subjectsWithCompleted.forEach(({ subj, si, completedCount, reviewedCount }, idx) => {
+    const pct = Math.round((reviewedCount / completedCount) * 100);
+    const isDone = reviewedCount === completedCount;
+    
+    const card = document.createElement('div');
+    card.className = 'rev-subject-card glass';
+    card.style.cssText = `border-right-color:${subj.color}; animation-delay:${idx*60}ms;`;
+    
+    card.innerHTML = `
+      ${isDone ? `<span class="cs-done-badge" title="تمت مراجعة جميع الدروس المكتملة">✅</span>` : ''}
+      <span class="cs-icon" style="color:${subj.color}">${SUBJECT_ICONS[subj.name] || '📚'}</span>
+      <div class="cs-name">${subj.name}</div>
+      <div class="cs-prog-text">${reviewedCount} من ${completedCount} درس مراجع (${pct}%)</div>
+      <div class="cs-prog-bar">
+        <div class="cs-prog-fill" style="width:${pct}%;background:linear-gradient(90deg,${subj.color}88,${subj.color})"></div>
+      </div>
+    `;
+    
+    card.onclick = () => goToLevel('units', si);
+    grid.appendChild(card);
+  });
+}
+
+// LEVEL 2: Render units that have completed lessons
+function renderUnitsList(si) {
+  const list = document.getElementById('unitsList');
+  const subj = curriculumState.subjects[si];
+  list.innerHTML = '';
+  
+  const unitsWithCompleted = subj.units.map((unit, ui) => {
+    const completedCount = unit.lessons.filter(l => l.completed).length;
+    const reviewedCount = unit.lessons.filter(l => l.completed && l.reviewed).length;
+    return { unit, ui, completedCount, reviewedCount };
+  }).filter(item => item.completedCount > 0);
+  
+  if (!unitsWithCompleted.length) {
+    list.innerHTML = `<div class="rev-empty">
+      <span class="rev-empty-icon">📦</span>
+      <div class="rev-empty-text">لا توجد دروس مكتملة في هذه المادة بعد.</div>
+    </div>`;
+    return;
+  }
+  
+  unitsWithCompleted.forEach(({ unit, ui, completedCount, reviewedCount }, idx) => {
+    const pct = Math.round((reviewedCount / completedCount) * 100);
+    const isDone = reviewedCount === completedCount;
+    
+    const card = document.createElement('div');
+    card.className = 'rev-unit-card glass';
+    card.style.animationDelay = (idx * 50) + 'ms';
+    
+    card.innerHTML = `
+      <div class="cu-num" style="color:${subj.color};border-color:${subj.color}44;background:${subj.color}11">${ui+1}</div>
+      <div class="cu-info">
+        <div class="cu-name" style="font-weight:700;font-size:0.95rem;">${escH(unit.name)}</div>
+        <div class="cu-meta">
+          <span>${completedCount} درس مكتمل</span>
+          <span>·</span>
+          <span>${reviewedCount} مراجع</span>
+          ${isDone ? '<span>· ✅ تمت المراجعة بالكامل</span>' : ''}
+        </div>
+        <div class="cu-prog-bar">
+          <div class="cu-prog-fill" style="width:${pct}%;background:linear-gradient(90deg,${subj.color}88,${subj.color})"></div>
+        </div>
+      </div>
+      <span class="cu-arrow">‹</span>
+    `;
+    
+    card.onclick = () => goToLevel('lessons', si, ui);
+    list.appendChild(card);
+  });
+}
+
+// LEVEL 3: Render completed lessons in a unit
+function renderLessonsList(si, ui) {
+  const list = document.getElementById('lessonsList');
+  const subj = curriculumState.subjects[si];
+  const unit = subj.units[ui];
+  list.innerHTML = '';
+  
+  // We want to render ALL completed lessons, but keep track of their original indices
+  const completedLessons = unit.lessons.map((lesson, li) => ({ lesson, li })).filter(item => item.lesson.completed);
+  
+  if (!completedLessons.length) {
+    list.innerHTML = `<div class="rev-empty">
+      <span class="rev-empty-icon">📝</span>
+      <div class="rev-empty-text">لا توجد دروس مكتملة في هذه الوحدة بعد.</div>
+    </div>`;
+    return;
+  }
+  
+  completedLessons.forEach(({ lesson, li }, idx) => {
+    const item = document.createElement('div');
+    item.className = `rev-lesson-item${lesson.reviewed ? ' reviewed' : ''}`;
+    item.style.animationDelay = (idx * 40) + 'ms';
+    
+    item.innerHTML = `
+      <div class="cl-check ${lesson.reviewed ? 'done' : ''}" 
+           onclick="toggleReviewed(${si},${ui},${li})" title="${lesson.reviewed ? 'إلغاء المراجعة' : 'تحديد كمراجع'}">
+        ${lesson.reviewed ? '✓' : ''}
+      </div>
+      <span class="cl-text">${escH(lesson.name)}</span>
+      <span class="cl-num">درس ${li+1}</span>
+    `;
+    list.appendChild(item);
+  });
+}
+
+function toggleReviewed(si, ui, li) {
+  const lesson = curriculumState.subjects[si].units[ui].lessons[li];
+  lesson.reviewed = !lesson.reviewed;
+  
+  saveCurrentData();
+  renderLessonsList(si, ui);
+  renderStatsBar();
+  
+  if (lesson.reviewed) {
+    showToast('✨ تم تأكيد مراجعة الدرس بنجاح!', 'success');
+  }
+}
+
+// Handle keyboard shortcuts (Escape to go back)
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && currLevel !== 'subjects') {
+    goBackLevel();
+  }
+});
+
+window.appReady.then(() => {
+  initReviewPage();
+});
+</script>
+</body>
+</html>

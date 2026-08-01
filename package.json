@@ -1,0 +1,22 @@
+{
+  "name": "gadwal-thanwy",
+  "version": "1.0.0",
+  "description": "الجدول الدراسي - ثانوية عامة",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'Static site - no build needed'",
+    "cap:init": "npx cap init",
+    "cap:add-android": "npx cap add android",
+    "cap:sync": "npx cap sync",
+    "cap:open": "npx cap open android"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.111.0",
+    "pdf-parse": "^2.4.5"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
+  }
+}
