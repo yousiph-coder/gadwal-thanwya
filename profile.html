@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الملف الشخصي — منشئ الجدول الدراسي</title>
+<meta name="description" content="إدارة الملف الشخصي وإعدادات مفتاح Gemini AI وإحصائيات التقدم الدراسي">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* Page Specific Styles */
+.profile-page { gap: 20px; max-width: 600px; margin: 0 auto; width: 100%; padding-top: 30px; flex-direction: column; }
+.ai-key-panel {
+  margin-top: 24px;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ai-key-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ai-key-input-row {
+  display: flex;
+  gap: 8px;
+}
+.ai-key-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  outline: none;
+  font-family: monospace;
+}
+.ai-key-toggle-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  border-radius: 10px;
+  width: 44px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ai-key-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.ai-key-save-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #3b6ef8, #8b5cf6);
+  color: #fff;
+  font-family: 'Cairo', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ai-key-save-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(59, 110, 248, 0.35);
+}
+.p-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.profile-sub {
+  color: var(--text-dim);
+}
+
+/* AI Memory Panel */
+.ai-memory-panel {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  background: rgba(139, 92, 246, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ai-memory-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #a78bfa;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ai-mem-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.ai-mem-row:last-child { border-bottom: none; }
+.ai-mem-row strong { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="screen active fade-in profile-page" id="screenProfile" style="display: flex;">
+  <div class="profile-header-bar">
+    <span class="profile-title">👤 الملف الشخصي</span>
+  </div>
+  
+  <div class="profile-card glass">
+    <div class="profile-avatar" id="profileAvatar">👤</div>
+    <div class="profile-name" id="profileNameDisplay">—</div>
+    <div class="profile-sub" id="profileBranchDisplay">طالب ثانوية عامة</div>
+    
+    <div class="profile-stats">
+      <div class="p-stat">
+        <div class="p-stat-num" id="statSubjects" style="color:var(--c3)">0</div>
+        <div class="p-stat-label">مادة</div>
+      </div>
+      <div class="p-stat">
+        <div class="p-stat-num" id="statStudySessions" style="color:var(--c4)">0</div>
+        <div class="p-stat-label">جلسة مذاكرة</div>
+      </div>
+      <div class="p-stat">
+        <div class="p-stat-num" id="statLessons" style="color:var(--c6)">0</div>
+        <div class="p-stat-label">درس مكتمل</div>
+      </div>
+      <div class="p-stat" style="grid-column: span 3; margin-top: 10px;">
+        <div class="p-stat-num" id="statTodos" style="color:var(--c2)">0</div>
+        <div class="p-stat-label">مهمة منجزة</div>
+      </div>
+    </div>
+    
+    <!-- API Key settings -->
+    <div class="ai-key-panel">
+      <span class="ai-key-label">🤖 مفتاح Gemini API للمساعد الذكي (اختياري)</span>
+      <div style="font-size:.78rem;color:var(--text-dim);margin-bottom:10px">
+        أدخل مفتاح Gemini API الخاص بك لاستخدام المساعد الذكي، أو اتركه فارغاً للاستخدام الافتراضي.
+      </div>
+      <div class="ai-key-input-row">
+        <input type="password" class="ai-key-input" id="apiKeyInput" placeholder="AIzaSy..." autocomplete="off">
+        <button class="ai-key-toggle-btn" id="apiKeyToggle" onclick="toggleApiKeyVisibility()" type="button">👁️</button>
+      </div>
+      <button class="ai-key-save-btn" onclick="saveApiKey()">حفظ مفتاح الـ API</button>
+    </div>
+
+    <!-- AI Memory Panel -->
+    <div class="ai-memory-panel">
+      <div class="ai-memory-title">🧠 ذاكرة المساعد الذكي</div>
+      <div id="aiMemoryNote">
+        <div class="ai-mem-row"><span>جاري التحميل...</span></div>
+      </div>
+    </div>
+    
+    <div class="profile-actions" style="margin-top: 24px;">
+      <button class="profile-action-btn" onclick="saveAllDataAction()">
+        💾 <span>حفظ جميع البيانات</span>
+      </button>
+      <button class="profile-action-btn danger" onclick="clearAllDataAction()">
+        🗑️ <span>مسح جميع بياناتي</span>
+      </button>
+      <button class="profile-action-btn danger" onclick="doLogoutAction()">
+        🚪 <span>تسجيل الخروج</span>
+      </button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+  
+  <div class="footer-note" style="text-align: center; margin-top: 20px;">
+    جدول الثانوية العامة · مدعوم بـ Gemini AI
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/particles.js"></script>
+<script src="js/db.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/common.js?v=4.2"></script>
+<script>
+function initProfilePage() {
+  if (!currentUser) return;
+  
+  // Name & Display Name
+  const dispName = localStorage.getItem('tt_display_name') || currentUser;
+  document.getElementById('profileNameDisplay').textContent = dispName;
+  document.getElementById('profileAvatar').textContent = dispName.charAt(0).toUpperCase();
+  
+  // Branch
+  if (state.branch) {
+    const label = BRANCHES[state.branch]?.label || 'ثانوية عامة';
+    document.getElementById('profileBranchDisplay').textContent = `طالب ثانوية عامة — شعبة ${label}`;
+  } else {
+    document.getElementById('profileBranchDisplay').textContent = 'طالب ثانوية عامة — لم يتم تحديد الشعبة';
+  }
+  
+  // API Key (per-user)
+  const input = document.getElementById('apiKeyInput');
+  input.value = getPerUserApiKey(currentUser);
+  
+  updateStats();
+}
+
+function saveApiKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  setPerUserApiKey(currentUser, val);
+  showToast('✅ تم حفظ مفتاح الـ API الخاص بحسابك بنجاح!', 'success');
+}
+
+function updateStats() {
+  // Subjects count
+  const subjCount = state.subjects ? state.subjects.length : 0;
+  document.getElementById('statSubjects').textContent = subjCount;
+
+  // Study sessions count
+  let sessionsCount = 0;
+  if (studyState.subjects) {
+    studyState.subjects.forEach(s => {
+      if (s.sessions) {
+        s.sessions.forEach(sess => {
+          if ((sess.days && sess.days.length > 0) || sess.startTime) {
+            sessionsCount++;
+          }
+        });
+      }
+    });
+  }
+  document.getElementById('statStudySessions').textContent = sessionsCount;
+
+  // Completed lessons count
+  let compLessons = 0;
+  if (curriculumState.subjects) {
+    curriculumState.subjects.forEach(s => {
+      if (s.units) {
+        s.units.forEach(u => {
+          if (u.lessons) {
+            compLessons += u.lessons.filter(l => l.completed).length;
+          }
+        });
+      }
+    });
+  }
+  document.getElementById('statLessons').textContent = compLessons;
+
+  // Completed tasks count (todo items + archive)
+  const doneTodos = (todoItems ? todoItems.filter(t => t.done).length : 0) + (todoArchive ? todoArchive.length : 0);
+  document.getElementById('statTodos').textContent = doneTodos;
+
+  // Load AI memory stats async
+  if (currentUser && window.DB) {
+    Promise.all([
+      DB.aiMemory.get(currentUser),
+      DB.chatLog.getRecent(currentUser, 9999),
+      DB.examLog.getAll(currentUser)
+    ]).then(([mem, chatMsgs, exams]) => {
+      const memNote = document.getElementById('aiMemoryNote');
+      if (!memNote) return;
+      const summaryCount = mem?.summaries?.length || 0;
+      const chatCount = chatMsgs?.length || 0;
+      const examCount = exams?.length || 0;
+      const weakSubjs = mem?.profile?.weakSubjects?.join('، ') || '—';
+      const strongSubjs = mem?.profile?.strongSubjects?.join('، ') || '—';
+      memNote.innerHTML = `
+        <div class="ai-mem-row"><span>🧠 ملاحظات محفوظة</span><strong>${summaryCount}</strong></div>
+        <div class="ai-mem-row"><span>💬 رسائل الـ AI</span><strong>${chatCount}</strong></div>
+        <div class="ai-mem-row"><span>📝 امتحانات مكتملة</span><strong>${examCount}</strong></div>
+        <div class="ai-mem-row"><span>⚠️ مواد تحتاج مراجعة</span><strong>${weakSubjs}</strong></div>
+        <div class="ai-mem-row"><span>💪 مواد قوية</span><strong>${strongSubjs}</strong></div>
+      `;
+    }).catch(() => {});
+  }
+}
+
+function toggleApiKeyVisibility() {
+  const input = document.getElementById('apiKeyInput');
+  const btn = document.getElementById('apiKeyToggle');
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁️';
+  }
+}
+
+
+
+function saveAllDataAction() {
+  saveCurrentData();
+  const indicator = document.getElementById('saveIndicator');
+  indicator.textContent = '✅ تم حفظ جميع البيانات';
+  indicator.classList.add('saved');
+  setTimeout(() => {
+    indicator.textContent = '';
+    indicator.classList.remove('saved');
+  }, 3000);
+}
+
+async function doLogoutAction() {
+  if (!confirm('هل تريد تسجيل الخروج؟')) return;
+
+  sessionStorage.setItem('tt_logged_out', 'true');
+
+  try {
+    if (window.SupaDB) {
+      await SupaDB.signOut();
+    }
+  } catch (e) {
+    console.warn('Logout note:', e);
+  }
+
+  // Clear keys
+  localStorage.removeItem('tt_current_user');
+  localStorage.removeItem('tt_supabase_uid');
+  localStorage.removeItem('tt_display_name');
+
+  showToast('🚪 تم تسجيل الخروج بنجاح', 'info');
+  window.location.href = 'auth.html';
+}
+
+async function clearAllDataAction() {
+  if (!confirm('⚠️ هل أنت متأكد من مسح جميع بياناتك؟ لا يمكن التراجع عن هذا الإجراء!')) return;
+
+  if (currentUser) {
+    localStorage.removeItem('tt_data_' + currentUser);
+
+    // Clear IndexedDB stores for this user
+    if (window.DB) {
+      await Promise.all([
+        DB.timetable.save(currentUser, { branch: null, subjects: [], studySubjects: [], aiProgress: {} }),
+        DB.curriculum.save(currentUser, []),
+        DB.todos.clearAll(currentUser),
+        DB.chatLog.clearAll(currentUser),
+        DB.aiMemory.save(currentUser, { profile: { name: currentUser, lastActive: new Date().toISOString().split('T')[0] }, summaries: [] })
+      ]).catch(e => console.warn('DB clear error:', e));
+    }
+  }
+
+  // Reset in-memory states
+  state.branch = null;
+  state.subjects = [];
+  state.currentView = 'grid';
+  studyState.subjects = [];
+  todoItems = [];
+  autoTaskDoneStates = {};
+  todoArchive = [];
+  curriculumState.subjects = [];
+  aiProgress = { studiedLessons: {}, lessonExams: {}, unitExams: {}, courseExams: {} };
+
+  showToast('🗑️ تم مسح جميع البيانات بنجاح', 'info');
+  initProfilePage();
+
+  setTimeout(() => {
+    location.href = 'index.html';
+  }, 1500);
+}
+
+window.appReady.then(() => {
+  initProfilePage();
+});
+</script>
+</body>
+</html>
